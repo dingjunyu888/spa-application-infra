@@ -61,9 +61,15 @@ jobs:
 
     - name: Install Docker
       run: |
-        sudo amazon-linux-extras install docker
-        sudo service docker start
-        sudo usermod -a -G docker ec2-user
+        sudo dnf update -y
+        sudo dnf install -y docker docker-cli containerd
+        sudo systemctl start docker
+        sudo systemctl enable docker
+        sudo usermod -aG docker ec2-user
+
+    - name: Verify Docker Installation
+      run: |
+        docker --version
 
     - name: Clone Infra Repo
       run: |
