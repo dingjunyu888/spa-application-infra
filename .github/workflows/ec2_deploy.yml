@@ -66,30 +66,29 @@ jobs:
         sudo yum install docker git -y
         sudo service docker start
         sudo usermod -a -G docker ec2-user
+        curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\$(uname -s)-\$(uname -m)" -o /usr/local/bin/docker-compose
+        chmod +x /usr/local/bin/docker-compose
+        EOF
 
     - name: Verify Docker Installation
       run: |
         docker --version
 
-    - name: Clone and Build Docker Images
+
+    - name: Clone Repo, Build and Run Docker Containers
       run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@$PUBLIC_IP << 'EOF'
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@$PUBLIC_IP << EOF
         git clone https://github.com/dingjunyu888/crud-react-node-mySQL-go.git
-        cd crud-react-node-mySQL-go/backend
-        docker build -t backend-image:latest .
-        cd ../frontend
-        docker build -t frontend-image:latest .
+        cd crud-react-node-mySQL-go
+        docker-compose up -d
         EOF
 
     - name: Run Smoke Test
       run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@${{ steps.get-ip.outputs.public_ip }} << 'EOF'
-        #!/bin/bash
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@$PUBLIC_IP << 'EOF'
         ENDPOINT="http://localhost:8800/books"
         EXPECTED_STATUS_CODE=200
-        # Properly escape the variables and use double quotes to ensure they are interpreted remotely, not locally
         response=\$(curl --write-out "%{http_code}" --silent --output /dev/null "\$ENDPOINT")
-        # Check if the response is what we expect
         if [[ "\$response" -eq "\$EXPECTED_STATUS_CODE" ]]; then
           echo "Smoke test passed: HTTP \$response"
           exit 0
@@ -97,6 +96,18 @@ jobs:
           echo "Smoke test failed: Expected HTTP \$EXPECTED_STATUS_CODE, got HTTP \$response"
           exit 1
         fi
+        EOF
+
+    - name: Build and Push Docker Image if Smoke Test Passes
+      run: |
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@$PUBLIC_IP << 'EOF'
+        cd crud-react-node-mySQL-go
+        docker build -t backend-image:latest ./backend
+        docker tag backend-image:latest $ECR_REGISTRY/$ECR_REPOSITORY:backend-$IMAGE_TAG
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:backend-$IMAGE_TAG
+        docker build -t frontend-image:latest ./frontend
+        docker tag frontend-image:latest $ECR_REGISTRY/$ECR_REPOSITORY:frontend-$IMAGE_TAG
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:frontend-$IMAGE_TAG
         EOF
 
     - name: Push Image to Amazon ECR if Tests Pass
