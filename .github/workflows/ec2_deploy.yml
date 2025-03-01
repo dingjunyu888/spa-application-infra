@@ -89,12 +89,13 @@ jobs:
         ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@$PUBLIC_IP << 'EOF'
         ENDPOINT="http://localhost:8800/books"
         EXPECTED_STATUS_CODE=200
-        response=\$(curl --write-out "%{http_code}" --silent --output /dev/null "\$ENDPOINT")
-        if [[ "\$response" -eq "\$EXPECTED_STATUS_CODE" ]]; then
-          echo "Smoke test passed: HTTP \$response"
+        # The command below uses single quotes for the curl command to ensure it's interpreted remotely
+        response=$(curl --write-out '%{http_code}' --silent --output /dev/null "$ENDPOINT")
+        if [[ "$response" -eq "$EXPECTED_STATUS_CODE" ]]; then
+          echo "Smoke test passed: HTTP $response"
           exit 0
         else
-          echo "Smoke test failed: Expected HTTP \$EXPECTED_STATUS_CODE, got HTTP \$response"
+          echo "Smoke test failed: Expected HTTP $EXPECTED_STATUS_CODE, got HTTP $response"
           exit 1
         fi
         EOF
