@@ -45,7 +45,6 @@ jobs:
       run: |
         PUBLIC_IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query "Reservations[*].Instances[*].PublicIpAddress" --output text)
         echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
-        echo "::set-output name=public_ip::$PUBLIC_IP"
         echo "Public IP: $PUBLIC_IP"
 
     - name: Set up SSH key
@@ -53,12 +52,7 @@ jobs:
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
-        if [ -z "${{ steps.get-ip.outputs.public_ip }}" ]; then
-          echo "Public IP is not set. Exiting..."
-          exit 1
-        else
-          ssh-keyscan -H ${{ steps.get-ip.outputs.public_ip }} >> ~/.ssh/known_hosts
-        fi
+        echo "$PUBLIC_IP" | ssh-keyscan -H >> ~/.ssh/known_hosts
 
     - name: Build, Tag, and Smoke Test Docker Image on EC2
       env:
