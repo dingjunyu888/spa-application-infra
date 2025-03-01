@@ -71,16 +71,14 @@ jobs:
       run: |
         docker --version
 
-    - name: Build Docker Image
+    - name: Clone and Build Docker Images
       run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@${{ steps.get-ip.outputs.public_ip }} << 'EOF'
-        docker build -t my-app-image:latest .
-        EOF
-
-    - name: Run Docker Container
-      run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@${{ steps.get-ip.outputs.public_ip }} << 'EOF'
-        docker run -d -p 8800:8800 my-app-image:latest
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@$PUBLIC_IP << 'EOF'
+        git clone https://github.com/dingjunyu888/crud-react-node-mySQL-go.git
+        cd crud-react-node-mySQL-go/backend
+        docker build -t backend-image:latest .
+        cd ../frontend
+        docker build -t frontend-image:latest .
         EOF
 
     - name: Run Smoke Test
