@@ -107,6 +107,13 @@ jobs:
       run: |
         aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
 
+    - name: Setup Amazon ECR Docker Credential Helper
+      run: |
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@${{ steps.get-ip.outputs.public_ip }} \
+        "sudo yum install -y amazon-ecr-credential-helper && \
+        mkdir -p /home/ec2-user/.docker && \
+        echo '{ \"credsStore\": \"ecr-login\" }' > /home/ec2-user/.docker/config.json"
+
     - name: Build and Push Docker Image if Smoke Test Passes
       run: |
         ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@$PUBLIC_IP << 'EOF'
