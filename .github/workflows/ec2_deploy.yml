@@ -71,22 +71,34 @@ jobs:
       run: |
         docker --version
 
-    - name: Clone Infra Repo
+    - name: Build Docker Image
       run: |
-        git clone https://github.com/dingjunyu888/SPA-APPLICATION-INFRA.git
-        chmod +x ./SPA-APPLICATION-INFRA/scripts/smoke-test.sh
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@${{ steps.get-ip.outputs.public_ip }} << 'EOF'
+        docker build -t my-app-image:latest .
+        EOF
 
-    - name: Build, Tag, and Smoke Test Docker Image on EC2
-      env:
-        INSTANCE_IP: ${{ steps.get-ip.outputs.public_ip }}
+    - name: Run Docker Container
       run: |
-        # SSH into the EC2 instance to build and test the Docker image
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@${INSTANCE_IP} << 'EOF'
-        docker build -t temp-image:latest .
-        chmod +x ./SPA-APPLICATION-INFRA/scripts/smoke-test.sh  # Ensure the script is executable
-        ./SPA-APPLICATION-INFRA/scripts/smoke-test.sh
-        if [ $? -ne 0 ]; then
-          echo "Smoke tests failed."
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@${{ steps.get-ip.outputs.public_ip }} << 'EOF'
+        docker run -d -p 8800:8800 my-app-image:latest
+        EOF
+
+    - name: Run Smoke Test
+      run: |
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@${{ steps.get-ip.outputs.public_ip }} << 'EOF'
+        #!/bin/bash
+        # Endpoint to check
+        ENDPOINT="http://localhost:8800/books"
+        # Expected status code
+        EXPECTED_STATUS_CODE=200
+        # Make a curl request to the backend endpoint
+        response=\$(curl --write-out "%{http_code}" --silent --output /dev/null "\$ENDPOINT")
+        # Check if the response is what we expect
+        if [ "\$response" -eq "\$EXPECTED_STATUS_CODE" ]; then
+          echo "Smoke test passed: HTTP \$response"
+          exit 0
+        else
+          echo "Smoke test failed: Expected HTTP \$EXPECTED_STATUS_CODE, got HTTP \$response"
           exit 1
         fi
         EOF
