@@ -52,7 +52,13 @@ jobs:
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
-        echo "$PUBLIC_IP" | ssh-keyscan -H >> ~/.ssh/known_hosts
+        if [ -z "$PUBLIC_IP" ]; then
+          echo "Public IP is not set. Exiting..."
+          exit 1
+        else
+          ssh-keyscan -H $PUBLIC_IP >> ~/.ssh/known_hosts || echo "ssh-keyscan failed"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@$PUBLIC_IP 'echo "SSH connection successful"'
+        fi
 
     - name: Build, Tag, and Smoke Test Docker Image on EC2
       env:
