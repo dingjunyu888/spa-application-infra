@@ -28,7 +28,6 @@ jobs:
         aws-region: us-east-1
 
     - name: Start EC2 Instance for Building and Testing
-      id: start-ec2
       run: |
         INSTANCE_ID=$(aws ec2 run-instances --image-id ami-05b10e08d247fb927 --instance-type t2.micro --key-name spa --security-group-ids sg-071cee3302403d191 --subnet-id subnet-0cc84b17429331c3d --query "Instances[0].InstanceId" --output text)
         echo "INSTANCE_ID=$INSTANCE_ID" >> $GITHUB_ENV
@@ -41,6 +40,7 @@ jobs:
         echo "Instance is now running."
 
     - name: Get EC2 Public IP
+      id: get-ip
       run: |
         PUBLIC_IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query "Reservations[*].Instances[*].PublicIpAddress" --output text)
         echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
@@ -57,16 +57,14 @@ jobs:
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" | base64 --decode > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H $PUBLIC_IP >> ~/.ssh/known_hosts
-        ssh -T -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@$PUBLIC_IP 'echo "SSH connection successful"'
-
+        ssh-keyscan -H ${{ steps.get-ip.outputs.public_ip }} >> ~/.ssh/known_hosts
 
     - name: Build, Tag, and Smoke Test Docker Image on EC2
       env:
         INSTANCE_IP: ${{ steps.get-ip.outputs.public_ip }}
       run: |
         # SSH into the EC2 instance to build and test the Docker image
-        ssh -o StrictHostKeyChecking=no ec2-user@${INSTANCE_IP} << 'EOF'
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@${INSTANCE_IP} << 'EOF'
         docker build -t temp-image:latest .
         chmod +x ./SPA-APPLICATION-INFRA/scripts/smoke-test.sh  # Ensure the script is executable
         ./SPA-APPLICATION-INFRA/scripts/smoke-test.sh
