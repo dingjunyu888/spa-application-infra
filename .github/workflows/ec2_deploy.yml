@@ -59,8 +59,9 @@ jobs:
         chmod 600 ~/.ssh/id_rsa
         ssh-keyscan -H ${{ steps.get-ip.outputs.public_ip }} >> ~/.ssh/known_hosts
 
-    - name: Install Docker
+    - name: Access EC2 and Install Docker
       run: |
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@${{ steps.get-ip.outputs.public_ip }} << EOF
         sudo yum update -y
         sudo yum install docker -y
         sudo service docker start
