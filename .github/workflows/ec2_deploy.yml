@@ -47,6 +47,12 @@ jobs:
         echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
         echo "Public IP: $PUBLIC_IP"
 
+    - name: Wait for EC2 Status Checks
+      run: |
+        echo "Waiting for EC2 status checks to complete..."
+        aws ec2 wait instance-status-ok --instance-ids $INSTANCE_ID
+        echo "EC2 instance is ready."
+
     - name: Set up SSH key
       run: |
         mkdir -p ~/.ssh
