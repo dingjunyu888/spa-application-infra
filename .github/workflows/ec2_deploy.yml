@@ -113,16 +113,22 @@ jobs:
         "sudo yum install -y amazon-ecr-credential-helper && \
         mkdir -p /home/ec2-user/.docker && \
         echo '{ \"credsStore\": \"ecr-login\" }' > /home/ec2-user/.docker/config.json"
-
-    - name: Build and Push Docker Image if Smoke Test Passes
+        
+    - name: Build Docker Image (Backend)
       run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@$PUBLIC_IP << 'EOF'
-        cd crud-react-node-mySQL-go
-        docker build -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_BACKEND_REPOSITORY }}:backend-${{ github.sha }} ./backend
-        docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_BACKEND_REPOSITORY }}:backend-${{ github.sha }}
-        docker build -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_FRONTEND_REPOSITORY }}:frontend-${{ github.sha }} ./frontend
-        docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_FRONTEND_REPOSITORY }}:frontend-${{ github.sha }}
-        EOF
+        docker build -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_BACKEND_REPOSITORY }}:latest ./crud-react-node-mySQL-go/backend
+
+    - name: Push Docker Image to ECR (Backend)
+      run: |
+        docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_BACKEND_REPOSITORY }}:latest
+
+    - name: Build Docker Image (Frontend)
+      run: |
+        docker build -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_FRONTEND_REPOSITORY }}:latest ./crud-react-node-mySQL-go/frontend
+
+    - name: Push Docker Image to ECR (Frontend)
+      run: |
+        docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_FRONTEND_REPOSITORY }}:latest
 
 
     - name: Clean up EC2 Instance
