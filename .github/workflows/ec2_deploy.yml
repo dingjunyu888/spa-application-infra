@@ -85,14 +85,12 @@ jobs:
       run: |
         ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@${{ steps.get-ip.outputs.public_ip }} << 'EOF'
         #!/bin/bash
-        # Endpoint to check
         ENDPOINT="http://localhost:8800/books"
-        # Expected status code
         EXPECTED_STATUS_CODE=200
-        # Make a curl request to the backend endpoint
+        # Properly escape the variables and use double quotes to ensure they are interpreted remotely, not locally
         response=\$(curl --write-out "%{http_code}" --silent --output /dev/null "\$ENDPOINT")
         # Check if the response is what we expect
-        if [ "\$response" -eq "\$EXPECTED_STATUS_CODE" ]; then
+        if [[ "\$response" -eq "\$EXPECTED_STATUS_CODE" ]]; then
           echo "Smoke test passed: HTTP \$response"
           exit 0
         else
