@@ -69,6 +69,7 @@ jobs:
         sudo curl -L "https://github.com/docker/compose/releases/download/v2.10.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
         sudo chmod +x /usr/local/bin/docker-compose
         docker-compose --version
+        $(aws ecr get-login-password --region us-east-1 | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }})
         EOF
 
     - name: Verify Docker Installation
