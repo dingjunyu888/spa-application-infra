@@ -63,7 +63,7 @@ jobs:
       run: |
         ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@${{ steps.get-ip.outputs.public_ip }} << EOF
         sudo yum update -y
-        sudo yum install docker -y
+        sudo yum install docker git -y
         sudo service docker start
         sudo usermod -a -G docker ec2-user
 
