@@ -111,13 +111,13 @@ jobs:
     - name: Build Docker Image and Push Docker Image to ECR (Backend)
       run: |
         cd root
-        docker build -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_BACKEND_REPOSITORY }}:latest ./crud-react-node-mySQL-go/backend
+        docker build -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_BACKEND_REPOSITORY }}:latest ./backend
         docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_BACKEND_REPOSITORY }}:latest
 
     - name: Build Docker Image and Push Docker Image to ECR(Frontend)
       run: |
         cd root
-        docker build -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_FRONTEND_REPOSITORY }}:latest ./crud-react-node-mySQL-go/frontend
+        docker build -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_FRONTEND_REPOSITORY }}:latest ./frontend
         docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_FRONTEND_REPOSITORY }}:latest
 
     - name: Clean up EC2 Instance
