@@ -142,9 +142,9 @@ jobs:
     - name: Configure AWS CLI
       run: |
         ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@${{ steps.get-qa-ec2-ip.outputs.public_ip }} \
-        "echo '${{ secrets.AWS_ACCESS_KEY_ID }}' | aws configure set aws_access_key_id && \
-        echo '${{ secrets.AWS_SECRET_ACCESS_KEY }}' | aws configure set aws_secret_access_key && \
-        echo '${{ secrets.AWS_SESSION_TOKEN }}' | aws configure set aws_session_token"
+        "aws configure set aws_access_key_id '${{ secrets.AWS_ACCESS_KEY_ID }}' && \
+        aws configure set aws_secret_access_key '${{ secrets.AWS_SECRET_ACCESS_KEY }}' && \
+        aws configure set aws_session_token '${{ secrets.AWS_SESSION_TOKEN }}'"
 
     - name: Pull Docker Images from ECR
       run: |
