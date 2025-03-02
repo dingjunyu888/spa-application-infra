@@ -152,8 +152,8 @@ jobs:
         ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@${{ steps.get-qa-ec2-ip.outputs.public_ip }} \
         "docker ps --filter 'name=backend' --format '{{{{.Names}}}}' | xargs -r docker stop && \
         docker ps --filter 'name=frontend' --format '{{{{.Names}}}}' | xargs -r docker stop && \
-        docker pull ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_BACKEND_REPOSITORY }}:latest && \
-        docker pull ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_FRONTEND_REPOSITORY }}:latest"
+        docker pull ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_BACKEND_REPOSITORY }}:backend-latest && \
+        docker pull ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_FRONTEND_REPOSITORY }}:frontend-latest"
 
     - name: Remove existing Docker containers
       run: |
@@ -163,11 +163,11 @@ jobs:
     - name: Deploy Docker Containers
       run: |
         ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@${{ steps.get-qa-ec2-ip.outputs.public_ip }} \
-        "docker run -d --name frontend -p 5173:3000 746488717346.dkr.ecr.us-east-1.amazonaws.com/frontend-image:latest; \
+        "docker run -d --name frontend -p 5173:3000 746488717346.dkr.ecr.us-east-1.amazonaws.com/frontend-image:frontend-latest; \
         docker run -d --name backend -p 8800:8800 \
         -e DB_HOST='${{ secrets.DB_HOST }}' \
         -e DB_USER='${{ secrets.DB_USER }}' \
         -e DB_PASS='${{ secrets.DB_PASS }}' \
         -e DB_NAME='${{ secrets.DB_NAME }}' \
         -e PORT=8800 \
-        746488717346.dkr.ecr.us-east-1.amazonaws.com/backend-image:latest"
+        746488717346.dkr.ecr.us-east-1.amazonaws.com/backend-image:backend-latest"
