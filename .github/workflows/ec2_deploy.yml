@@ -144,7 +144,8 @@ jobs:
         ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@${{ steps.get-qa-ec2-ip.outputs.public_ip }} \
         "aws configure set aws_access_key_id '${{ secrets.AWS_ACCESS_KEY_ID }}' && \
         aws configure set aws_secret_access_key '${{ secrets.AWS_SECRET_ACCESS_KEY }}' && \
-        aws configure set aws_session_token '${{ secrets.AWS_SESSION_TOKEN }}'"
+        aws configure set aws_session_token '${{ secrets.AWS_SESSION_TOKEN }}' && \
+        aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}"
 
     - name: Pull Docker Images from ECR
       run: |
