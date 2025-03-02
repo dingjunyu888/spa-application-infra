@@ -117,7 +117,7 @@ jobs:
     - name: Build Docker Image and Push Docker Image to ECR(Frontend)
       run: |
         cd root
-        docker build -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_FRONTEND_REPOSITORY }}:frontend-latest ./frontend
+        docker build --build-arg VITE_APP_BACKEND_URL=https://bookstore.junyuding.com -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_FRONTEND_REPOSITORY }}:frontend-latest ./frontend
         docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_FRONTEND_REPOSITORY }}:frontend-latest
 
     - name: Clean up EC2 Instance
