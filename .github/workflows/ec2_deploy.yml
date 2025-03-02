@@ -154,6 +154,11 @@ jobs:
         docker ps --filter 'name=frontend' --format '{{{{.Names}}}}' | xargs -r docker stop && \
         docker pull ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_BACKEND_REPOSITORY }}:latest && \
         docker pull ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_FRONTEND_REPOSITORY }}:latest"
+        
+    - name: Remove existing Docker containers
+      run: |
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@${{ steps.get-qa-ec2-ip.outputs.public_ip }} \
+        "docker stop frontend backend && docker rm frontend backend"
 
     - name: Deploy Docker Containers
       run: |
