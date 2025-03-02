@@ -28,102 +28,102 @@ jobs:
         aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
         aws-region: us-east-1
 
-    # - name: Start EC2 Instance for Building and Testing
-    #   run: |
-    #     INSTANCE_ID=$(aws ec2 run-instances --image-id ami-05b10e08d247fb927 --instance-type t2.micro --key-name spa --security-group-ids sg-071cee3302403d191 --subnet-id subnet-0cc84b17429331c3d --query "Instances[0].InstanceId" --output text)
-    #     echo "INSTANCE_ID=$INSTANCE_ID" >> $GITHUB_ENV
-    #     echo "::set-output name=instance_id::$INSTANCE_ID"
-    #     echo "Instance ID: $INSTANCE_ID"
+    - name: Start EC2 Instance for Building and Testing
+      run: |
+        INSTANCE_ID=$(aws ec2 run-instances --image-id ami-05b10e08d247fb927 --instance-type t2.micro --key-name spa --security-group-ids sg-071cee3302403d191 --subnet-id subnet-0cc84b17429331c3d --query "Instances[0].InstanceId" --output text)
+        echo "INSTANCE_ID=$INSTANCE_ID" >> $GITHUB_ENV
+        echo "::set-output name=instance_id::$INSTANCE_ID"
+        echo "Instance ID: $INSTANCE_ID"
 
-    # - name: Wait for EC2 Instance to be Running
-    #   run: |
-    #     aws ec2 wait instance-running --instance-ids $INSTANCE_ID
-    #     echo "Instance is now running."
+    - name: Wait for EC2 Instance to be Running
+      run: |
+        aws ec2 wait instance-running --instance-ids $INSTANCE_ID
+        echo "Instance is now running."
 
-    # - name: Get EC2 Public IP
-    #   id: get-ip
-    #   run: |
-    #     PUBLIC_IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query "Reservations[*].Instances[*].PublicIpAddress" --output text)
-    #     echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
-    #     echo "::set-output name=public_ip::$PUBLIC_IP"
+    - name: Get EC2 Public IP
+      id: get-ip
+      run: |
+        PUBLIC_IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query "Reservations[*].Instances[*].PublicIpAddress" --output text)
+        echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
+        echo "::set-output name=public_ip::$PUBLIC_IP"
 
-    # - name: Wait for EC2 Status Checks
-    #   run: |
-    #     echo "Waiting for EC2 status checks to complete..."
-    #     aws ec2 wait instance-status-ok --instance-ids $INSTANCE_ID
-    #     echo "EC2 instance is ready."
+    - name: Wait for EC2 Status Checks
+      run: |
+        echo "Waiting for EC2 status checks to complete..."
+        aws ec2 wait instance-status-ok --instance-ids $INSTANCE_ID
+        echo "EC2 instance is ready."
 
-    # - name: Set up SSH key
-    #   run: |
-    #     mkdir -p ~/.ssh
-    #     echo "${{ secrets.SSH_PRIVATE_KEY }}" | base64 --decode > ~/.ssh/id_rsa
-    #     chmod 600 ~/.ssh/id_rsa
-    #     ssh-keyscan -H ${{ steps.get-ip.outputs.public_ip }} >> ~/.ssh/known_hosts
+    - name: Set up SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" | base64 --decode > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ steps.get-ip.outputs.public_ip }} >> ~/.ssh/known_hosts
 
-    # - name: Access EC2 and Install Docker
-    #   run: |
-    #     ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@${{ steps.get-ip.outputs.public_ip }} \
-    #     "export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}; \
-    #     export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}; \
-    #     export AWS_SESSION_TOKEN=${{ secrets.AWS_SESSION_TOKEN }}; \
-    #     sudo yum update -y && \
-    #     sudo yum install -y docker git && \
-    #     sudo service docker start && \
-    #     sudo usermod -aG docker ec2-user && \
-    #     sudo curl -L 'https://github.com/docker/compose/releases/download/v2.10.2/docker-compose-$(uname -s)-$(uname -m)' -o /usr/local/bin/docker-compose && \
-    #     sudo chmod +x /usr/local/bin/docker-compose && \
-    #     docker-compose --version && \
-    #     aws ecr get-login-password --region us-east-1 | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}"
+    - name: Access EC2 and Install Docker
+      run: |
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@${{ steps.get-ip.outputs.public_ip }} \
+        "export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}; \
+        export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}; \
+        export AWS_SESSION_TOKEN=${{ secrets.AWS_SESSION_TOKEN }}; \
+        sudo yum update -y && \
+        sudo yum install -y docker git && \
+        sudo service docker start && \
+        sudo usermod -aG docker ec2-user && \
+        sudo curl -L 'https://github.com/docker/compose/releases/download/v2.10.2/docker-compose-$(uname -s)-$(uname -m)' -o /usr/local/bin/docker-compose && \
+        sudo chmod +x /usr/local/bin/docker-compose && \
+        docker-compose --version && \
+        aws ecr get-login-password --region us-east-1 | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}"
 
-    # - name: Verify Docker Installation
-    #   run: |
-    #     docker --version
+    - name: Verify Docker Installation
+      run: |
+        docker --version
 
 
-    # - name: Clone Repo, Build and Run Docker Containers
-    #   run: |
-    #     ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@$PUBLIC_IP << EOF
-    #     git clone https://github.com/dingjunyu888/crud-react-node-mySQL-go.git
-    #     cd crud-react-node-mySQL-go
-    #     docker-compose up -d
-    #     EOF
+    - name: Clone Repo, Build and Run Docker Containers
+      run: |
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@$PUBLIC_IP << EOF
+        git clone https://github.com/dingjunyu888/crud-react-node-mySQL-go.git
+        cd crud-react-node-mySQL-go
+        docker-compose up -d
+        EOF
 
-    # - name: Run Smoke Test
-    #   run: |
-    #     ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@$PUBLIC_IP << 'EOF'
-    #     ENDPOINT="http://localhost:8800/books"
-    #     EXPECTED_STATUS_CODE=200
-    #     # The command below uses single quotes for the curl command to ensure it's interpreted remotely
-    #     response=$(curl --write-out '%{http_code}' --silent --output /dev/null "$ENDPOINT")
-    #     if [[ "$response" -eq "$EXPECTED_STATUS_CODE" ]]; then
-    #       echo "Smoke test passed: HTTP $response"
-    #       exit 0
-    #     else
-    #       echo "Smoke test failed: Expected HTTP $EXPECTED_STATUS_CODE, got HTTP $response"
-    #       exit 1
-    #     fi
-    #     EOF
+    - name: Run Smoke Test
+      run: |
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@$PUBLIC_IP << 'EOF'
+        ENDPOINT="http://localhost:8800/books"
+        EXPECTED_STATUS_CODE=200
+        # The command below uses single quotes for the curl command to ensure it's interpreted remotely
+        response=$(curl --write-out '%{http_code}' --silent --output /dev/null "$ENDPOINT")
+        if [[ "$response" -eq "$EXPECTED_STATUS_CODE" ]]; then
+          echo "Smoke test passed: HTTP $response"
+          exit 0
+        else
+          echo "Smoke test failed: Expected HTTP $EXPECTED_STATUS_CODE, got HTTP $response"
+          exit 1
+        fi
+        EOF
     
-    # - name: Login to Amazon ECR
-    #   run: |
-    #     aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
+    - name: Login to Amazon ECR
+      run: |
+        aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
 
-    # - name: Build Docker Image and Push Docker Image to ECR (Backend)
-    #   run: |
-    #     cd root
-    #     docker build -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_BACKEND_REPOSITORY }}:latest ./backend
-    #     docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_BACKEND_REPOSITORY }}:latest
+    - name: Build Docker Image and Push Docker Image to ECR (Backend)
+      run: |
+        cd root
+        docker build -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_BACKEND_REPOSITORY }}:latest ./backend
+        docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_BACKEND_REPOSITORY }}:latest
 
-    # - name: Build Docker Image and Push Docker Image to ECR(Frontend)
-    #   run: |
-    #     cd root
-    #     docker build -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_FRONTEND_REPOSITORY }}:latest ./frontend
-    #     docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_FRONTEND_REPOSITORY }}:latest
+    - name: Build Docker Image and Push Docker Image to ECR(Frontend)
+      run: |
+        cd root
+        docker build -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_FRONTEND_REPOSITORY }}:latest ./frontend
+        docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_FRONTEND_REPOSITORY }}:latest
 
-    # - name: Clean up EC2 Instance
-    #   if: always()
-    #   run: |
-    #     aws ec2 terminate-instances --instance-ids $INSTANCE_ID
+    - name: Clean up EC2 Instance
+      if: always()
+      run: |
+        aws ec2 terminate-instances --instance-ids $INSTANCE_ID
 
     - name: Get EC2 Public IP
       id: get-ip
