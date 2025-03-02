@@ -120,10 +120,10 @@ jobs:
         docker build -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_FRONTEND_REPOSITORY }}:frontend-latest ./frontend
         docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_FRONTEND_REPOSITORY }}:frontend-latest
 
-    - name: Clean up EC2 Instance
-      if: always()
-      run: |
-        aws ec2 terminate-instances --instance-ids $INSTANCE_ID
+    # - name: Clean up EC2 Instance
+    #   if: always()
+    #   run: |
+    #     aws ec2 terminate-instances --instance-ids $INSTANCE_ID
 
     - name: Get QA MACHINE EC2 Public IP
       id: get-qa-ec2-ip
