@@ -111,12 +111,13 @@ jobs:
 
         echo "Retrieving the list of books..."
         BOOKS=$(curl -s "http://localhost:8800/books")
+        echo "Books data: $BOOKS"
         if [[ "$BOOKS" == "[]" || "$BOOKS" == "" ]]; then
           echo "No books found. Exiting..."
           exit 1
         fi
 
-        BOOK_ID=$(echo $BOOKS | jq -r '.[0].id')
+        BOOK_ID=$(echo $BOOKS | jq -r '.[3].id')
         if [[ -z "$BOOK_ID" || "$BOOK_ID" == "null" ]]; then
           echo "Failed to retrieve valid book ID. Exiting..."
           exit 1
