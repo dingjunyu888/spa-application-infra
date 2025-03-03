@@ -8,7 +8,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: '0 12 * * *'  # CA 0am
+    - cron: '0 13 * * *'  # CA 0am
   workflow_dispatch:  # This line allows manual triggering of the workflow.
 
 jobs:
@@ -118,7 +118,7 @@ jobs:
           exit 1
         fi
 
-        BOOK_ID=$(echo $BOOKS | jq -r '.[0].id')  # Assuming the new book is the first in the list
+        BOOK_ID=$(echo $BOOKS | jq -r '.[3].id')  # Assuming the new book is the first in the list
         if [[ -z "$BOOK_ID" || "$BOOK_ID" == "null" ]]; then
           echo "Failed to retrieve valid book ID. Exiting..."
           exit 1
