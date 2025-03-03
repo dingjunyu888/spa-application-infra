@@ -92,9 +92,10 @@ jobs:
 
     - name: Run Smoke Test
       run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@$PUBLIC_IP << 'BASH_SCRIPT'
-        echo "Checking API endpoint: http://localhost:8800/books"
-        response=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:8800/books")
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@${{ steps.get-temp-ec2-ip.outputs.public_ip }} << 'BASH_SCRIPT'
+        EC2_PUBLIC_IP=${{ steps.get-temp-ec2-ip.outputs.public_ip }}
+        echo "Checking API endpoint: http://$EC2_PUBLIC_IP:8800/books"
+        response=$(curl -s -o /dev/null -w "%{http_code}" "http://$EC2_PUBLIC_IP:8800/books")
         echo "API is up. Status: HTTP $response"
         if [ "$response" -ne "200" ]; then
           echo "API check failed. HTTP status: $response"
@@ -102,7 +103,7 @@ jobs:
         fi
 
         echo "Creating a new book..."
-        POST_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "Content-Type: application/json" -d '{"title":"Integration Test Book","description":"A book created during integration tests.","price":15.99,"cover":"http://example.com/cover.jpg"}' "http://localhost:8800/books")
+        POST_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "Content-Type: application/json" -d '{"title":"Integration Test Book","description":"A book created during integration tests.","price":15.99,"cover":"http://example.com/cover.jpg"}' "http://$EC2_PUBLIC_IP:8800/books")
         echo "POST response code: $POST_RESPONSE"
         if [ "$POST_RESPONSE" -ne "200" ]; then
           echo "Failed to create a book. Response code: $POST_RESPONSE"
@@ -110,14 +111,14 @@ jobs:
         fi
 
         echo "Retrieving the list of books..."
-        BOOKS=$(curl -s "http://localhost:8800/books")
+        BOOKS=$(curl -s "http://$EC2_PUBLIC_IP:8800/books")
         echo "Books data: $BOOKS"
         if [[ "$BOOKS" == "[]" || "$BOOKS" == "" ]]; then
           echo "No books found. Exiting..."
           exit 1
         fi
 
-        BOOK_ID=$(echo $BOOKS | jq -r '.[3].id')
+        BOOK_ID=$(echo $BOOKS | jq -r '.[0].id')  # Assuming the new book is the first in the list
         if [[ -z "$BOOK_ID" || "$BOOK_ID" == "null" ]]; then
           echo "Failed to retrieve valid book ID. Exiting..."
           exit 1
@@ -125,7 +126,7 @@ jobs:
         echo "Retrieved Book ID: $BOOK_ID"
 
         echo "Updating the created book..."
-        PUT_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X PUT -H "Content-Type: application/json" -d '{"title":"Updated Integration Test Book","description":"Updated description.","price":18.99,"cover":"http://example.com/new_cover.jpg"}' "http://localhost:8800/books/$BOOK_ID")
+        PUT_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X PUT -H "Content-Type: application/json" -d '{"title":"Updated Integration Test Book","description":"Updated description.","price":18.99,"cover":"http://example.com/new_cover.jpg"}' "http://$EC2_PUBLIC_IP:8800/books/$BOOK_ID")
         echo "PUT response code: $PUT_RESPONSE"
         if [ "$PUT_RESPONSE" -ne "200" ]; then
           echo "Failed to update the book. Response code: $PUT_RESPONSE"
@@ -134,7 +135,6 @@ jobs:
 
         echo "✅ Integration tests passed successfully!"
         BASH_SCRIPT
-
     
     - name: Login to Amazon ECR
       run: |
