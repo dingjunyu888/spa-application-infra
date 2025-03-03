@@ -8,7 +8,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: '0 8 * * *'  # CA 0am
+    - cron: '0 11 * * *'  # CA 0am
   workflow_dispatch:  # This line allows manual triggering of the workflow.
 
 jobs:
@@ -92,19 +92,46 @@ jobs:
 
     - name: Run Smoke Test
       run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@$PUBLIC_IP << 'EOF'
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@$PUBLIC_IP << 'BASH_SCRIPT'
         ENDPOINT="http://localhost:8800/books"
-        EXPECTED_STATUS_CODE=200
-        # The command below uses single quotes for the curl command to ensure it's interpreted remotely
-        response=$(curl --write-out '%{http_code}' --silent --output /dev/null "$ENDPOINT")
-        if [[ "$response" -eq "$EXPECTED_STATUS_CODE" ]]; then
-          echo "Smoke test passed: HTTP $response"
-          exit 0
+        echo "Checking API endpoint: $ENDPOINT"
+        response=$(curl -s -o /dev/null -w "%{http_code}" "$ENDPOINT")
+        if [[ "$response" -ne 200 ]]; then
+          echo "Smoke test initial check failed: HTTP $response"
+          exit 1
         else
-          echo "Smoke test failed: Expected HTTP $EXPECTED_STATUS_CODE, got HTTP $response"
+          echo "API is up. Status: HTTP $response"
+        fi
+
+        echo "Creating a new book..."
+        POST_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "Content-Type: application/json" -d '{"title":"Integration Test Book","description":"A book for test","price":9.99,"cover":"http://example.com/cover.jpg"}' "$ENDPOINT")
+        if [ "$POST_RESPONSE" -ne 200 ]; then
+          echo "Failed to create a book. Response code: $POST_RESPONSE"
           exit 1
         fi
-        EOF
+
+        echo "Retrieving the list of books..."
+        BOOKS=$(curl -s "$ENDPOINT")
+        BOOK_ID=$(echo "$BOOKS" | jq -r '.[3].id')
+        echo "Retrieved Book ID: $BOOK_ID"
+
+        echo "Updating the book ID: $BOOK_ID..."
+        PUT_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X PUT -H "Content-Type: application/json" -d '{"title":"Updated Integration Test Book","description":"Updated description.","price":18.99,"cover":"http://example.com/new_cover.jpg"}' "$ENDPOINT/$BOOK_ID")
+        if [ "$PUT_RESPONSE" -ne 200 ]; then
+          echo "Failed to update the book. Response code: $PUT_RESPONSE"
+          exit 1
+        fi
+
+        echo "Verifying the updates..."
+        UPDATED_BOOK=$(curl -s "$ENDPOINT/$BOOK_ID")
+        UPDATED_TITLE=$(echo "$UPDATED_BOOK" | jq -r '.title')
+        if [ "$UPDATED_TITLE" != "Updated Integration Test Book" ]; then
+          echo "Book update verification failed. Expected 'Updated Integration Test Book', got '$UPDATED_TITLE'"
+          exit 1
+        fi
+
+        echo "✅ Integration tests passed successfully!"
+        BASH_SCRIPT
     
     - name: Login to Amazon ECR
       run: |
