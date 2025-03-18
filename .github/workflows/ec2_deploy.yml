@@ -7,8 +7,8 @@ on:
   pull_request:
     branches:
       - main
-  schedule:
-    - cron: '0 13 * * *'  # CA 0am
+  # schedule:
+  #   - cron: '0 13 * * *'  # CA 0am
   workflow_dispatch:  # This line allows manual triggering of the workflow.
 
 jobs:
